@@ -1,0 +1,19 @@
+@(exam: Form[CreateExamForm])(implicit messages: Messages)
+
+@import helper._
+
+@main("Welcome to Play") {
+	<script type='text/javascript' src='@routes.Assets.versioned("javascripts/index.js")'></script>
+
+	<ul id="persons"></ul>
+
+  @form(routes.ExamController.addExam()) {
+		@inputText(exam("name"))
+		@inputText(exam("level"))
+		@inputText(exam("date"))
+
+		<div class="buttons">
+			<input type="submit" value="Add exam"/>
+		</div>
+	}
+}
