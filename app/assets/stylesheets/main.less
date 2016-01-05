@@ -22,17 +22,32 @@ dl {
   }
 }
 
-.buttons {
-  clear: both;
-  padding: 10px;
+#exams {
+  border-spacing: 0px;
+  border-collapse: collapse;
+
+  td {
+    border: 1px solid #1e90ff;
+  }
+
+  .name {
+    width: 100px;
+  }
+  .level {
+    text-align: center;
+    width: 50px;
+  }
+  .date {
+    text-align: right;
+  }
 }
 
-#persons {
-  .name {
-    display: inline-block;
-    width: 60px;
-  }
-  .age {
-    display: inline-block;
-  }
+#level {
+  margin-right: 10px;
+  width: 30px;
+}
+
+#level_slider {
+  width: 200px;
+  display: inline-block;
 }

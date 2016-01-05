@@ -2,14 +2,15 @@
 
 @import helper._
 
-@main("Welcome to Play") {
+@main("Exams calendar - main page") {
 	<script type='text/javascript' src='@routes.Assets.versioned("javascripts/index.js")'></script>
 
-	<ul id="persons"></ul>
+	<table id="exams"></table>
 
   @form(routes.ExamController.addExam()) {
 		@inputText(exam("name"))
-		@inputText(exam("level"))
+        @inputText(exam("level"))
+        <div id="level_slider"></div>
 		@inputText(exam("date"))
 
 		<div class="buttons">
