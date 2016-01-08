@@ -1,20 +1,30 @@
-@(exam: Form[CreateExamForm])(implicit messages: Messages)
+@(addExamForm: Form[CreateExamForm])(implicit messages: Messages)
 
 @import helper._
 
 @main("Exams calendar - main page") {
-	<script type='text/javascript' src='@routes.Assets.versioned("javascripts/index.js")'></script>
+    <script src="@routes.Assets.versioned("javascripts/index.js")" type="text/javascript"></script>
+	@form(routes.ExamController.addExam()) {
+        <div class="form_field_element">
+            <input type="text" name="name" id="name_field" value="@addExamForm("name").value">
+            @if(addExamForm.error("name")) {
+                <div class="form_field_error">@Messages(addExamForm.error("name").get.message)</div>
+            }
+        </div>
+        <div class="form_field_element">
+            <div id="level_slider"></div>
+            <input type="text" name="level" readonly="readonly" id="level_field" value="@addExamForm("level").value">
+        </div>
+        <div class="form_field_element">
+            <input type="text" name="date" id="date_field" value="@addExamForm("date").value">
+            @if(addExamForm.error("date")) {
+                <div class="form_field_error">@Messages(addExamForm.error("date").get.message)</div>
+            }
+        </div>
+        <div class="buttons">
+            <input type="submit" value="Add exam"/>
+        </div>
+    }
 
-	<table id="exams"></table>
-
-  @form(routes.ExamController.addExam()) {
-		@inputText(exam("name"))
-        @inputText(exam("level"))
-        <div id="level_slider"></div>
-		@inputText(exam("date"))
-
-		<div class="buttons">
-			<input type="submit" value="Add exam"/>
-		</div>
-	}
+    <table id="exams"></table>
 }

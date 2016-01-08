@@ -1,5 +1,7 @@
 package controllers
 
+import java.text.DateFormat
+
 import play.api._
 import play.api.mvc._
 import play.api.i18n._
@@ -17,7 +19,7 @@ import javax.inject._
 
 class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesApi)
                                  (implicit ec: ExecutionContext) extends Controller with I18nSupport {
-  val examForm: Form[CreateExamForm] = Form {
+  val addExamForm: Form[CreateExamForm] = Form {
     mapping(
       "name" -> nonEmptyText,
       "level" -> number.verifying(min(1), max(10)),
@@ -25,12 +27,21 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
     )(CreateExamForm.apply)(CreateExamForm.unapply)
   }
 
+  val editExamForm: Form[EditExamForm] = Form {
+    mapping(
+      "id" -> longNumber(),
+      "name" -> nonEmptyText,
+      "level" -> number.verifying(min(1), max(10)),
+      "date" -> sqlDate
+    )(EditExamForm.apply)(EditExamForm.unapply)
+  }
+
   def index = Action {
-    Ok(views.html.index(examForm))
+    Ok(views.html.index(addExamForm))
   }
 
   def addExam = Action.async { implicit request =>
-    examForm.bindFromRequest.fold(
+    addExamForm.bindFromRequest.fold(
       errorForm => {
         Future.successful(Ok(views.html.index(errorForm)))
       },
@@ -42,6 +53,38 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
     )
   }
 
+  def editExam(id: Long) = Action.async {
+    repo.getById(id).map(exams =>
+      if (exams.nonEmpty)
+        Ok(views.html.editExam(editExamForm.bind(Map(
+          "id" -> exams.head.id.toString,
+          "name" -> exams.head.name,
+          "level" -> exams.head.level.toString,
+          "date" -> exams.head.date.toString))))
+      else
+        Redirect(routes.ExamController.index)
+    )
+  }
+
+  def saveExam = Action.async { implicit request =>
+    editExamForm.bindFromRequest.fold(
+      errorForm => {
+        Future.successful(Ok(views.html.editExam(errorForm)))
+      },
+      exam => {
+        repo.save(exam.id, exam.name, exam.level, exam.date).map { _ =>
+          Redirect(routes.ExamController.index)
+        }
+      }
+    )
+  }
+
+  def deleteExam(id: Long) = Action.async {
+    repo.delete(id).map(exams =>
+      Redirect(routes.ExamController.index)
+    )
+  }
+
   def getExams = Action.async {
   	repo.list().map { exams =>
       Ok(Json.toJson(exams))
@@ -50,3 +93,4 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
 }
 
 case class CreateExamForm(name: String, level: Int, date: Date)
+case class EditExamForm(id: Long, name: String, level: Int, date: Date)

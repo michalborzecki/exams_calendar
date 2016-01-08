@@ -2,24 +2,30 @@ $ ->
   $.get "/exams", (exams) ->
     $.each exams, (index, exam) ->
       row = $("<tr>")
-      name = $("<td>").addClass("name").text exam.name
+      name = $("<td>").addClass("name")
+      name_a = $("<a>").attr("href", "/editexam/" + exam.id).text exam.name
+      name.append(name_a)
       level = $("<td>").addClass("level").text exam.level
       date = $("<td>").addClass("date").text exam.date
-      row.append(name).append(level).append(date)
+      del = $("<td>").addClass("del")
+      del_a = $("<a>").attr("href", "/deleteexam/" + exam.id).text "Delete"
+      del.append(del_a)
+      row.append(name).append(level).append(date).append(del)
       $("#exams").append(row)
 
 $ ->
-  $("#date").datepicker({dateFormat: "yy-mm-dd"})
+  $("#date_field").datepicker({dateFormat: "yy-mm-dd"})
+
+$ ->
+  if !$("#level_field").val()
+    $("#level_field").val(1)
 
 $ ->
   $( "#level_slider" ).slider({
-    value:1,
+    value: $("#level_field").val(),
     min: 1,
     max: 10,
     step: 1,
     slide: ( event, ui ) ->
-      $( "#level" ).val( ui.value )
+      $( "#level_field" ).val( ui.value )
   })
-
-$ ->
-  $("#level").val(1)
