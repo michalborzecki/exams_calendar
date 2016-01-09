@@ -7,12 +7,11 @@ import scala.concurrent.{Await, Future}
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-
 /**
   * Created by Piotr on 07.01.2016.
   */
 class Authentication extends Controller{
-  def isAuthenticated(request: Request[AnyContent]): Boolean ={
+  def isAuthenticated[A](request: Request[A]): Boolean ={
     request.session.get("user_id").map {
       user => true
     }.getOrElse {
@@ -43,4 +42,12 @@ class Authentication extends Controller{
 
   }
 
+}
+
+object AuthAction extends ActionBuilder[Request] with play.api.mvc.Results{
+  val oauth = new Authentication
+  def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
+    if (oauth isAuthenticated request) block(request)
+    else Future { Redirect(routes.Authentication.authenticate()) }
+  }
 }
