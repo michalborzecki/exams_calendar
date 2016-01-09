@@ -35,6 +35,7 @@ class ExamRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implic
   }
 
   def list(): Future[Seq[Exam]] = db.run {
+
     exams.result
   }
 }
