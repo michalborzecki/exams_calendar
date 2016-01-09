@@ -9,7 +9,8 @@ import play.api.data.validation.Constraints._
 import dal._
 import java.sql.Date
 import play.api.libs.json._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 import javax.inject._
 
@@ -41,7 +42,8 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
         Future.successful(Ok(views.html.index(errorForm)))
       },
       exam => {
-        repo.create(exam.name, exam.level, exam.date).map { _ =>
+        repo.create(request.session.get("user_id").get,
+          exam.name, exam.level, exam.date).map { _ =>
           Redirect(routes.ExamController.index)
         }
       }
@@ -49,21 +51,21 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
   }
 
   def getExams = AuthAction.async { implicit request =>
-    repo.list().map { exams =>
+    repo.listForUser(request.session.get("user_id").get).map { exams =>
       Ok(Json.toJson(exams))
     }
   }
 
   def editExam(id: Long) = AuthAction.async { implicit request =>
     repo.getById(id).map(exams =>
-      if (exams.nonEmpty)
+      if (exams.isEmpty || exams.head.userid != request.session.get("user_id").get)
+        Redirect(routes.ExamController.index)
+      else
         Ok(views.html.editExam(editExamForm.bind(Map(
           "id" -> exams.head.id.toString,
           "name" -> exams.head.name,
           "level" -> exams.head.level.toString,
           "date" -> exams.head.date.toString))))
-      else
-        Redirect(routes.ExamController.index)
     )
   }
 
@@ -73,19 +75,26 @@ class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesA
         Future.successful(Ok(views.html.editExam(errorForm)))
       },
       exam => {
-        repo.save(exam.id, exam.name, exam.level, exam.date).map { _ =>
-          Redirect(routes.ExamController.index)
-        }
+        val oldExam = repo.getById(exam.id)
+        if (Await.result(oldExam, 1 second).head.userid == request.session.get("user_id").get)
+          repo.save(exam.id, exam.name, exam.level, exam.date).map { _ =>
+            Redirect(routes.ExamController.index)
+          }
+        else
+          Future { Redirect(routes.ExamController.index) }
       }
     )
   }
 
   def deleteExam(id: Long) = AuthAction.async { implicit request =>
-    repo.delete(id).map(exams =>
-      Redirect(routes.ExamController.index)
-    )
+    val oldExam = repo.getById(id)
+    if (Await.result(oldExam, 1 second).head.userid == request.session.get("user_id").get)
+      repo.delete(id).map(exams =>
+        Redirect(routes.ExamController.index)
+      )
+    else
+      Future { Redirect(routes.ExamController.index) }
   }
-
 }
 
 case class CreateExamForm(name: String, level: Int, date: Date)
