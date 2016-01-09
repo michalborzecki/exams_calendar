@@ -13,7 +13,8 @@ import models._
 import dal._
 import java.sql.Date
 import play.api.libs.json._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 import controllers.Authentication
 
 import javax.inject._
@@ -52,7 +53,8 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
           Future.successful(Ok(views.html.index(errorForm)))
         },
         exam => {
-          repo.create(exam.name, exam.level, exam.date).map { _ =>
+          repo.create(request.session.get("user_id").get,
+            exam.name, exam.level, exam.date).map { _ =>
             Redirect(routes.ExamController.index)
           }
         }
@@ -63,7 +65,7 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
 
   def getExams = Action.async { implicit request =>
     if(oauth isAuthenticated request) {
-      repo.list().map { exams =>
+      repo.listForUser(request.session.get("user_id").get).map { exams =>
         Ok(Json.toJson(exams))
       }
     }
@@ -73,14 +75,14 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
   def editExam(id: Long) = Action.async { implicit request =>
     if(oauth isAuthenticated request) {
       repo.getById(id).map(exams =>
-        if (exams.nonEmpty)
-          Ok(views.html.editExam(editExamForm.bind(Map(
-            "id" -> exams.head.id.toString,
-            "name" -> exams.head.name,
-            "level" -> exams.head.level.toString,
-            "date" -> exams.head.date.toString))))
-        else
+        if (exams.isEmpty || exams.head.userid != request.session.get("user_id").get)
           Redirect(routes.ExamController.index)
+        else
+            Ok(views.html.editExam(editExamForm.bind(Map(
+              "id" -> exams.head.id.toString,
+              "name" -> exams.head.name,
+              "level" -> exams.head.level.toString,
+              "date" -> exams.head.date.toString))))
       )
     }
     else Future { Redirect(routes.Authentication.authenticate()) }
@@ -93,9 +95,13 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
           Future.successful(Ok(views.html.editExam(errorForm)))
         },
         exam => {
-          repo.save(exam.id, exam.name, exam.level, exam.date).map { _ =>
-            Redirect(routes.ExamController.index)
-          }
+          val oldExam = repo.getById(exam.id)
+          if (Await.result(oldExam, 1 second).head.userid == request.session.get("user_id").get)
+            repo.save(exam.id, exam.name, exam.level, exam.date).map { _ =>
+              Redirect(routes.ExamController.index)
+            }
+          else
+            Future { Redirect(routes.ExamController.index) }
         }
       )
     }
@@ -104,9 +110,13 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
 
   def deleteExam(id: Long) = Action.async { implicit request =>
     if(oauth isAuthenticated request) {
-      repo.delete(id).map(exams =>
-        Redirect(routes.ExamController.index)
-      )
+      val oldExam = repo.getById(id)
+      if (Await.result(oldExam, 1 second).head.userid == request.session.get("user_id").get)
+        repo.delete(id).map(exams =>
+          Redirect(routes.ExamController.index)
+        )
+      else
+        Future { Redirect(routes.ExamController.index) }
     }
     else Future { Redirect(routes.Authentication.authenticate()) }
   }

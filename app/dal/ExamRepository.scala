@@ -18,25 +18,29 @@ class ExamRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implic
 
   private class ExamsTable(tag: Tag) extends Table[Exam](tag, "exams") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def userid = column[String]("userid")
     def name = column[String]("name")
     def level = column[Int]("level")
     def date = column[Date]("date")
 
-    def * = (id, name, level, date) <> ((Exam.apply _).tupled, Exam.unapply)
+    def * = (id, userid, name, level, date) <> ((Exam.apply _).tupled, Exam.unapply)
   }
 
   private val exams = TableQuery[ExamsTable]
 
-  def create(name: String, level: Int, date: Date): Future[Exam] = db.run {
-    (exams.map(p => (p.name, p.level, p.date))
+  def create(userid: String, name: String, level: Int, date: Date): Future[Exam] = db.run {
+    (exams.map(p => (p.userid, p.name, p.level, p.date))
       returning exams.map(_.id)
-      into ((row, id) => Exam(id, row._1, row._2, row._3))
-    ) += (name, level, date)
+      into ((row, id) => Exam(id, row._1, row._2, row._3, row._4))
+    ) += (userid, name, level, date)
   }
 
   def list(): Future[Seq[Exam]] = db.run {
-
     exams.result
+  }
+
+  def listForUser(userid: String): Future[Seq[Exam]] = db.run {
+    exams.filter(_.userid === userid).result
   }
 
   def getById(id: Long): Future[Seq[Exam]] = db.run {
