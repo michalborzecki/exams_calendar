@@ -72,7 +72,7 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
     )
   }
 
-  def saveExam = Action.async { implicit request =>
+  def saveExam = AuthAction.async { implicit request =>
     editExamForm.bindFromRequest.fold(
       errorForm => {
         Future.successful(Ok(views.html.editExam(errorForm)))
@@ -85,12 +85,12 @@ class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val
     )
   }
 
-  def deleteExam(id: Long) = Action.async { implicit request =>
+  def deleteExam(id: Long) = AuthAction.async { implicit request =>
     repo.delete(id).map(exams =>
       Redirect(routes.ExamController.index)
     )
   }
-  
+
 }
 
 case class CreateExamForm(name: String, level: Int, date: Date)
