@@ -38,4 +38,17 @@ class ExamRepository @Inject() (dbConfigProvider: DatabaseConfigProvider)(implic
 
     exams.result
   }
+
+  def getById(id: Long): Future[Seq[Exam]] = db.run {
+    exams.filter(_.id === id).result
+  }
+
+  def save(id: Long, name: String, level: Int, date: Date) : Future[Int] = db.run {
+    exams.filter(_.id === id)
+         .map(e => (e.name, e.level, e.date))
+         .update((name, level, date))
+  }
+  def delete(id: Long) : Future[Int] = db.run {
+    exams.filter(_.id === id).delete
+  }
 }
