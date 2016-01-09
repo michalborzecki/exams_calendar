@@ -1,24 +1,19 @@
 package controllers
 
-import java.text.DateFormat
 
-import play.api._
 import play.api.mvc._
 import play.api.i18n._
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.data.validation.Constraints._
-import play.api.libs.json.Json
-import models._
 import dal._
 import java.sql.Date
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
-import controllers.Authentication
 
 import javax.inject._
 
-class ExamController @Inject() (repo: ExamRepository, oauth: Authentication, val messagesApi: MessagesApi)
+class ExamController @Inject() (repo: ExamRepository, val messagesApi: MessagesApi)
                                  (implicit ec: ExecutionContext) extends Controller with I18nSupport {
   val addExamForm: Form[CreateExamForm] = Form {
     mapping(
