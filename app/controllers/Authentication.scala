@@ -1,8 +1,8 @@
 package controllers
 
-import play.api.libs.ws
 import play.api.mvc._
 import play.api.libs.ws._
+import play.mvc.Results.Redirect
 import scala.concurrent.{Await, Future}
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,11 +12,9 @@ import scala.concurrent.duration.Duration
   */
 class Authentication extends Controller{
   def isAuthenticated[A](request: Request[A]): Boolean ={
-    request.session.get("user_id").map {
-      user => true
-    }.getOrElse {
-      false
-    }
+    request.session.get("user_id").exists(user => {
+      user.nonEmpty
+    })
   }
 
   def authenticate = Action {
@@ -37,17 +35,19 @@ class Authentication extends Controller{
         )
       }
     }
-
     Await.result(response, Duration(3000, "millis"))
-
   }
-
 }
 
-object AuthAction extends ActionBuilder[Request] with play.api.mvc.Results{
-  val oauth = new Authentication
+trait AuthAction extends ActionBuilder[Request] with play.api.mvc.Results {
+  def oauth: Authentication
+
   def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
     if (oauth isAuthenticated request) block(request)
     else Future { Redirect(routes.Authentication.authenticate()) }
   }
+}
+
+object AuthAction extends AuthAction{
+  def oauth = new Authentication
 }
