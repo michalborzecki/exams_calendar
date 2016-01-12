@@ -4,27 +4,43 @@
 
 @main("Exams calendar - main page") {
     <script src="@routes.Assets.versioned("javascripts/index.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.versioned("javascripts/examEditor.js")" type="text/javascript"></script>
+    <h2>Add exam</h2>
 	@form(routes.ExamController.addExam()) {
         <div class="form_field_element">
+            <span class="form_field_desc">Exam:</span>
             <input type="text" name="name" id="name_field" value="@addExamForm("name").value">
             @if(addExamForm.error("name")) {
                 <div class="form_field_error">@Messages(addExamForm.error("name").get.message)</div>
             }
         </div>
         <div class="form_field_element">
+            <span class="form_field_desc">Difficulty:</span>
             <div id="level_slider"></div>
             <input type="text" name="level" readonly="readonly" id="level_field" value="@addExamForm("level").value">
         </div>
         <div class="form_field_element">
+            <span class="form_field_desc">Date:</span>
             <input type="text" name="date" id="date_field" value="@addExamForm("date").value">
             @if(addExamForm.error("date")) {
                 <div class="form_field_error">@Messages(addExamForm.error("date").get.message)</div>
             }
         </div>
-        <div class="buttons">
+        <div class="form_field_element">
+            <span class="form_field_desc"> </span>
             <input type="submit" value="Add exam"/>
         </div>
     }
 
-    <table id="exams"></table>
+    <h2>Your exams</h2>
+    <table id="exams">
+        <thead>
+            <tr>
+                <td class="name head">Exam</td>
+                <td class="level head">Difficulty</td>
+                <td class="date head">Date</td>
+                <td class="delete head">Delete</td>
+            </tr>
+        </thead>
+    </table>
 }
